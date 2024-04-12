@@ -160,7 +160,7 @@ class Client(ABC):
         )
 
         prepped = self._session.prepare_request(request)
-        response = self._session.send(prepped, verify=self._verify, stream=stream)
+        response = self._session.send(prepped, verify=False, stream=stream)
 
         if response.status_code == 401 and self.REST_ENDPOINT in os.environ:
             # refresh token and retry request - only on hopsworks
@@ -168,7 +168,7 @@ class Client(ABC):
             # Update request with the new token
             request.auth = self._auth
             prepped = self._session.prepare_request(request)
-            response = self._session.send(prepped, verify=self._verify, stream=stream)
+            response = self._session.send(prepped, verify=False, stream=stream)
 
         if response.status_code // 100 != 2:
             raise exceptions.RestAPIError(url, response)
