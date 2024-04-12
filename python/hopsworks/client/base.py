@@ -29,6 +29,43 @@ urllib3.disable_warnings(urllib3.exceptions.SecurityWarning)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+import warnings
+import contextlib
+
+from urllib3.exceptions import InsecureRequestWarning
+
+old_merge_environment_settings = requests.Session.merge_environment_settings
+
+@contextlib.contextmanager
+def no_ssl_verification():
+    opened_adapters = set()
+
+    def merge_environment_settings(self, url, proxies, stream, verify, cert):
+        # Verification happens only once per connection so we need to close
+        # all the opened adapters once we're done. Otherwise, the effects of
+        # verify=False persist beyond the end of this context manager.
+        opened_adapters.add(self.get_adapter(url))
+
+        settings = old_merge_environment_settings(self, url, proxies, stream, verify, cert)
+        settings['verify'] = False
+
+        return settings
+
+    requests.Session.merge_environment_settings = merge_environment_settings
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', InsecureRequestWarning)
+            yield
+    finally:
+        requests.Session.merge_environment_settings = old_merge_environment_settings
+
+        for adapter in opened_adapters:
+            try:
+                adapter.close()
+            except:
+                pass
+
 class Client(ABC):
     TOKEN_FILE = "token.jwt"
     APIKEY_FILE = "api.key"
@@ -141,46 +178,47 @@ class Client(ABC):
         :return: Response json
         :rtype: dict
         """
-        f_url = furl.furl(self._base_url)
-        if with_base_path_params:
-            base_path_params = ["hopsworks-api", "api"]
-            f_url.path.segments = base_path_params + path_params
-        else:
-            f_url.path.segments = path_params
-        url = str(f_url)
+        with no_ssl_verification():
+            f_url = furl.furl(self._base_url)
+            if with_base_path_params:
+                base_path_params = ["hopsworks-api", "api"]
+                f_url.path.segments = base_path_params + path_params
+            else:
+                f_url.path.segments = path_params
+            url = str(f_url)
 
-        request = requests.Request(
-            method,
-            url=url,
-            headers=headers,
-            data=data,
-            params=query_params,
-            auth=self._auth,
-            files=files,
-        )
+            request = requests.Request(
+                method,
+                url=url,
+                headers=headers,
+                data=data,
+                params=query_params,
+                auth=self._auth,
+                files=files,
+            )
 
-        prepped = self._session.prepare_request(request)
-        response = self._session.send(prepped, verify=False, stream=stream)
-
-        if response.status_code == 401 and self.REST_ENDPOINT in os.environ:
-            # refresh token and retry request - only on hopsworks
-            self._auth = auth.BearerAuth(self._read_jwt())
-            # Update request with the new token
-            request.auth = self._auth
             prepped = self._session.prepare_request(request)
             response = self._session.send(prepped, verify=False, stream=stream)
 
-        if response.status_code // 100 != 2:
-            raise exceptions.RestAPIError(url, response)
+            if response.status_code == 401 and self.REST_ENDPOINT in os.environ:
+                # refresh token and retry request - only on hopsworks
+                self._auth = auth.BearerAuth(self._read_jwt())
+                # Update request with the new token
+                request.auth = self._auth
+                prepped = self._session.prepare_request(request)
+                response = self._session.send(prepped, verify=False, stream=stream)
 
-        if stream:
-            return response
-        else:
-            # handle different success response codes
-            if len(response.content) == 0:
-                return None
-            return response.json()
+            if response.status_code // 100 != 2:
+                raise exceptions.RestAPIError(url, response)
 
-    def _close(self):
-        """Closes a client. Can be implemented for clean up purposes, not mandatory."""
-        self._connected = False
+            if stream:
+                return response
+            else:
+                # handle different success response codes
+                if len(response.content) == 0:
+                    return None
+                return response.json()
+
+        def _close(self):
+            """Closes a client. Can be implemented for clean up purposes, not mandatory."""
+            self._connected = False
