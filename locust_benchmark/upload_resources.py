@@ -7,7 +7,7 @@ if __name__ == "__main__":
     ds_api = project.get_dataset_api()
 
     # Replace by a 
-    size = int(1*(1024*1024*1024)) # 1GB
+    size = int(0.5*(1024*1024*1024)) # 1GB
     file = "random.dat"
 
     with open("random.dat", "wb") as output:
