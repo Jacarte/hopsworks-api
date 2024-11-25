@@ -14,5 +14,5 @@ if __name__ == "__main__":
         output.write(np.random.bytes(size))
 
     # Upload the file
-    hw_path = ds_api.upload(file, "Resources", simultaneous_uploads=10)
+    hw_path = ds_api.upload(file, "Resources", overwrite=True)
     assert ds_api.exists(hw_path)
