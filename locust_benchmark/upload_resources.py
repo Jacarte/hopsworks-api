@@ -1,4 +1,5 @@
 from common.hopsworks_client import HopsworksClient
+import numpy as np
 
 if __name__ == "__main__":
     hopsworks_client = HopsworksClient()
