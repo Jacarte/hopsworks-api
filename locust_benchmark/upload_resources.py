@@ -2,7 +2,7 @@ from common.hopsworks_client import HopsworksClient
 
 if __name__ == "__main__":
     hopsworks_client = HopsworksClient()
-    project = connection.get_project()  
+    project = hopsworks_client.get_project()  
     ds_api = project.get_dataset_api()
 
     # Replace by a 
