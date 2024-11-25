@@ -38,6 +38,9 @@ class HopsworksClient:
         self.batch_size = self.hopsworks_config.get("batch_size", 100)
         self.tablespace = self.hopsworks_config.get("tablespace", None)
 
+    def get_project(self):
+        return self.project
+
     def get_or_create_fg(self):
         locust_fg = self.fs.get_or_create_feature_group(
             name="locust_fg",
