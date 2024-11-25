@@ -103,3 +103,22 @@ class MySQLFeatureVectorBatchLookup(User):
     @stopwatch
     def _get_feature_vectors(self, pk):
         self.fv.get_feature_vectors(pk)
+
+class HopsFSLookup(User):
+    wait_time = constant(0.001)
+    weight = 2
+
+    def __init__(self, environment):
+        super().__init__(environment)
+        self.client = environment.hopsworks_client
+        self.project = self.client.get_project()
+        self.ds_api = self.project.get_dataset_api()
+
+    def on_start(self):
+        pass
+
+    @task
+    def query_large_files(self):
+        # Test "exists"?
+        return self.ds_api.download("Resources/{}".format("random.dat"))
+
