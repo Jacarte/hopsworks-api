@@ -1,6 +1,12 @@
+FROM docker.hops.works/hopsworks/hwutils:0.7 as builder
+
 FROM locustio/locust:2.23.1
 
 USER root
+
+COPY --from="builder"  /hops  /hops
+
+RUN /hops/bin/hdfs version
 
 RUN apt-get update -y && apt-get -y install gcc python3-dev librdkafka-dev git
 
