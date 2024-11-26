@@ -6,7 +6,11 @@ from locust import HttpUser, User, task, constant, events
 from locust.runners import MasterRunner
 from urllib3 import PoolManager
 import nest_asyncio
-import subprocess
+
+import pyarrow as pa
+import pyarrow.fs
+import pyarrow.parquet as pq
+import os
 
 
 @events.init.add_listener
@@ -111,6 +115,9 @@ class HopsFSLookup(User):
 
     def __init__(self, environment):
         super().__init__(environment)
+        self.hdfs =  pa.fs.HadoopFileSystem(host=os.environ.get("NAMENODE_HOST", "namenode.service.consul"), port=int(os.environ.get("NAMENODE_PORT", "8020")))
+        self.random_file = os.environ.get("RANODM_FILE", "/tmp/random.dat")
+ 
 
     def on_start(self):
         pass
@@ -118,5 +125,8 @@ class HopsFSLookup(User):
     @task
     def query_large_files(self):
         # Notice while the cache warms up, the stats need to be discarded
-        return subprocess.check_output("hdfs dfs -copyToLocal /tmp/random.dat /tmp/random.dat", stderr=subprocess.STDOUT)
+        with self.hdfs.open_input_file(self.random_file) as f:
+            with open("/tmp/random.dat", "wb") as local_file:
+                local_file.write(file_data)
+
 
