@@ -118,5 +118,5 @@ class HopsFSLookup(User):
     @task
     def query_large_files(self):
         # Notice while the cache warms up, the stats need to be discarded
-        return subprocess.check_output("/srv/hops/hadoop/bin/hdfs dfs -copyToLocal /tmp/random.dat /tmp/random.dat", stderr=subprocess.STDOUT)
+        return subprocess.check_output("hdfs dfs -copyToLocal /tmp/random.dat /tmp/random.dat", stderr=subprocess.STDOUT)
 
