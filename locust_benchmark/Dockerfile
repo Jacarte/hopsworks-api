@@ -4,6 +4,11 @@ FROM locustio/locust:2.23.1
 
 USER root
 
+ENV PATH="/hops/bin:${PATH}"
+
+
+ENV _JAVA_OPTIONS="${_JAVA_OPTIONS} -Duser.home=$HOME"
+
 COPY --from="builder"  /hops  /hops
 
 RUN /hops/bin/hdfs version
