@@ -119,6 +119,6 @@ class HopsFSLookup(User):
 
     @task
     def query_large_files(self):
-        # Test "exists"?
+        # Notice while the cache warms up, the stats need to be discarded
         return self.ds_api.download("Resources/{}".format("random.dat"), overwrite=True)
 
