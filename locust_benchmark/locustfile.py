@@ -6,6 +6,7 @@ from locust import HttpUser, User, task, constant, events
 from locust.runners import MasterRunner
 from urllib3 import PoolManager
 import nest_asyncio
+import os
 
 
 @events.init.add_listener
@@ -110,9 +111,6 @@ class HopsFSLookup(User):
 
     def __init__(self, environment):
         super().__init__(environment)
-        self.client = environment.hopsworks_client
-        self.project = self.client.get_project()
-        self.ds_api = self.project.get_dataset_api()
 
     def on_start(self):
         pass
@@ -120,5 +118,5 @@ class HopsFSLookup(User):
     @task
     def query_large_files(self):
         # Notice while the cache warms up, the stats need to be discarded
-        return self.ds_api.download("Resources/{}".format("random.dat"), overwrite=True)
+        return os.check_output("/srv/hops/hadoop/bin/hdfs dfs -copyToLocal /tmp/random.dat /tmp/random.dat".split(" "))
 
